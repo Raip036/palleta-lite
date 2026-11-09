@@ -1,0 +1,23 @@
+<h1>Video Library</h1>
+<a href="{% url 'upload' %}">Upload videos</a>
+
+<p>Filter:
+  <a href="{% url 'video_list' %}">All</a>
+  {% for t in tags %}
+    <a href="?tag={{ t.name }}"
+       {% if t.name == active_tag %}style="font-weight:bold"{% endif %}>
+      {{ t.name }}
+    </a>
+  {% endfor %}
+</p>
+
+{% for v in videos %}
+  <div>
+    <h3>{{ v.title }}</h3>
+    <video src="{{ v.file.url }}" controls width="320"></video>
+    <p>{% for t in v.tags.all %}#{{ t.name }} {% endfor %}</p>
+    <a href="{% url 'download' v.pk %}">Download</a>
+  </div>
+{% empty %}
+  <p>No videos yet.</p>
+{% endfor %}
