@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from .forms import UploadForm
+from .forms import EditVideoForm, UploadForm
 from .models import Tag, Video
 
 PREVIEW_LIMIT = 6
@@ -28,6 +28,16 @@ def video_list(request):
     })
 
 
+def parse_tags(text):
+    """'Lecture, demo,, lecture ' -> [Tag(lecture), Tag(demo)], creating tags as needed."""
+    names = []
+    for raw in text.split(","):
+        name = raw.strip().lower()
+        if name and name not in names:
+            names.append(name)
+    return [Tag.objects.get_or_create(name=n)[0] for n in names]
+
+
 def is_ajax(request):
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
@@ -36,12 +46,7 @@ def upload(request):
     if request.method == "POST":
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
-            names = [
-                t.strip().lower()
-                for t in form.cleaned_data["tags"].split(",")
-                if t.strip()
-            ]
-            tags = [Tag.objects.get_or_create(name=n)[0] for n in names]
+            tags = parse_tags(form.cleaned_data["tags"])
             created = []
             for f in form.cleaned_data["files"]:
                 video = Video.objects.create(title=f.name, file=f)
@@ -152,3 +157,25 @@ def download_selected(request):
                 shutil.copyfileobj(src, dst, 1024 * 1024)
     archive.seek(0)
     return FileResponse(archive, as_attachment=True, filename="paletta-videos.zip")
+
+
+def edit_video(request, pk):
+    video = get_object_or_404(Video, pk=pk)
+    if request.method == "POST":
+        form = EditVideoForm(request.POST)
+        if form.is_valid():
+            old_tag_ids = set(video.tags.values_list("pk", flat=True))
+            video.title = form.cleaned_data["title"]
+            video.save(update_fields=["title"])
+            video.tags.set(parse_tags(form.cleaned_data["tags"]))
+            # Tags removed from this video may now be unused
+            Tag.objects.filter(pk__in=old_tag_ids, video__isnull=True).delete()
+            messages.success(request, f'Saved changes to "{video.title}".')
+            return back_to_library(request)
+    else:
+        form = EditVideoForm(initial={
+            "title": video.title,
+            "tags": ", ".join(video.tags.values_list("name", flat=True)),
+        })
+    # Full-page fallback: used without JavaScript, or to show validation errors
+    return render(request, "library/edit.html", {"form": form, "video": video})

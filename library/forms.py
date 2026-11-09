@@ -26,3 +26,10 @@ class UploadForm(forms.Form):
         required=False,
         help_text="Comma-separated, applied to all files",
     )
+
+class EditVideoForm(forms.Form):
+    title = forms.CharField(max_length=200)   # strips whitespace, so "   " is rejected
+    tags = forms.CharField(
+        required=False,
+        help_text="Comma-separated",
+    )

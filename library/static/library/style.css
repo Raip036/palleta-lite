@@ -312,9 +312,9 @@ dialog#player {
   overflow: hidden;
 }
 dialog#player[open] { animation: pop .3s var(--ease); }
-dialog#player::backdrop, dialog#delete-dialog::backdrop { background: rgba(0, 0, 0, .85); backdrop-filter: blur(6px); }
+dialog#player::backdrop, dialog#delete-dialog::backdrop, dialog#edit-dialog::backdrop { background: rgba(0, 0, 0, .85); backdrop-filter: blur(6px); }
 
-dialog#delete-dialog {
+dialog#delete-dialog, dialog#edit-dialog {
   width: min(440px, 92vw);
   padding: 0;
   border: 1px solid var(--line);
@@ -322,7 +322,7 @@ dialog#delete-dialog {
   background: var(--black);
   color: var(--white);
 }
-dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
+dialog#delete-dialog[open], dialog#edit-dialog[open] { animation: pop .25s var(--ease); }
 .dialog-body { display: grid; gap: .75rem; padding: 1.5rem; }
 .delete-name { font-weight: 700; overflow-wrap: anywhere; }
 .dialog-body .form-actions { margin-top: .75rem; justify-content: flex-end; }
@@ -382,7 +382,7 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 
 .field { display: grid; gap: .4rem; }
 .field label { font-weight: 700; }
-.upload input[type="text"] {
+.upload input[type="text"], .dialog-body input[type="text"] {
   width: 100%;
   padding: .8rem 1rem;
   border: 1px solid var(--line);
@@ -392,8 +392,8 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
   font: inherit;
   transition: border-color .2s, background-color .2s;
 }
-.upload input[type="text"]::placeholder { color: var(--ink-3); }
-.upload input[type="text"]:focus { outline: none; border-color: var(--white); background: var(--fill-2); }
+.upload input[type="text"]::placeholder, .dialog-body input[type="text"]::placeholder { color: var(--ink-3); }
+.upload input[type="text"]:focus, .dialog-body input[type="text"]:focus { outline: none; border-color: var(--white); background: var(--fill-2); }
 .hint { color: var(--ink-3); font-size: .875rem; }
 .field-error, .errorlist {
   list-style: none; margin: 0; padding: .1rem 0 .1rem .75rem;

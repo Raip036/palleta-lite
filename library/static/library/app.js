@@ -112,6 +112,55 @@
     });
   }
 
+  // ---------- Edit title and tags ----------
+  var editDialog = document.getElementById("edit-dialog");
+  if (editDialog) {
+    var editForm = document.getElementById("edit-form");
+    var titleIn = document.getElementById("edit-title");
+    var tagsIn = document.getElementById("edit-tags");
+    var saveBtn = document.getElementById("edit-save");
+    var saveLabel = document.getElementById("edit-save-label");
+    var original = "";
+
+    // Compare tags the way the server will store them: trimmed, lower-case, no duplicates
+    function normTags(text) {
+      var seen = [];
+      text.split(",").forEach(function (t) {
+        t = t.trim().toLowerCase();
+        if (t && seen.indexOf(t) === -1) seen.push(t);
+      });
+      return seen.sort().join(",");
+    }
+    function snapshot() { return titleIn.value.trim() + "|" + normTags(tagsIn.value); }
+    function check() { saveBtn.disabled = !titleIn.value.trim() || snapshot() === original; }
+
+    document.querySelectorAll("[data-edit]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        e.preventDefault();   // without JS, the link opens the full edit page instead
+        editForm.action = el.dataset.editUrl;
+        titleIn.value = el.dataset.title;
+        tagsIn.value = el.dataset.tags;
+        original = snapshot();
+        saveBtn.classList.remove("loading");
+        saveLabel.textContent = "Save changes";
+        check();
+        editDialog.showModal();
+        titleIn.focus();
+        titleIn.select();
+      });
+    });
+
+    titleIn.addEventListener("input", check);
+    tagsIn.addEventListener("input", check);
+    document.getElementById("edit-cancel").addEventListener("click", function () { editDialog.close(); });
+    editDialog.addEventListener("click", function (e) { if (e.target === editDialog) editDialog.close(); });
+    editForm.addEventListener("submit", function () {
+      saveBtn.disabled = true;
+      saveBtn.classList.add("loading");
+      saveLabel.textContent = "Saving…";
+    });
+  }
+
   // ---------- Select mode: multi-select, ZIP download, bulk delete ----------
   var selectToggle = document.getElementById("select-toggle");
   if (selectToggle) {

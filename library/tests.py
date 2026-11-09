@@ -177,3 +177,52 @@ class SelectedVideoTests(TestCase):
     def test_bulk_endpoints_require_post(self):
         self.assertEqual(self.client.get(reverse("download_selected")).status_code, 405)
         self.assertEqual(self.client.get(reverse("delete_selected")).status_code, 405)
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class EditVideoTests(TestCase):
+    def setUp(self):
+        self.video = Video.objects.create(
+            title="old.mp4", file=SimpleUploadedFile("old.mp4", b"data")
+        )
+
+    def test_edit_updates_title_and_tags(self):
+        response = self.client.post(
+            reverse("edit", args=[self.video.pk]),
+            {"title": "  Week 1 lecture ", "tags": "Lecture, demo, lecture"},
+        )
+
+        self.assertRedirects(response, reverse("video_list"))
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.title, "Week 1 lecture")
+        self.assertEqual(
+            sorted(self.video.tags.values_list("name", flat=True)), ["demo", "lecture"]
+        )
+
+    def test_removing_a_tag_deletes_it_only_if_unused(self):
+        lone = Tag.objects.create(name="lone")
+        shared = Tag.objects.create(name="shared")
+        other = Video.objects.create(title="b.mp4", file=SimpleUploadedFile("b.mp4", b"data"))
+        self.video.tags.set([lone, shared])
+        other.tags.set([shared])
+
+        self.client.post(reverse("edit", args=[self.video.pk]), {"title": "old.mp4", "tags": ""})
+
+        self.assertFalse(Tag.objects.filter(name="lone").exists())
+        self.assertTrue(Tag.objects.filter(name="shared").exists())
+
+    def test_blank_title_is_rejected(self):
+        response = self.client.post(reverse("edit", args=[self.video.pk]), {"title": "   ", "tags": ""})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors["title"])
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.title, "old.mp4")
+
+    def test_edit_page_is_prefilled(self):
+        self.video.tags.set([Tag.objects.create(name="demo")])
+
+        response = self.client.get(reverse("edit", args=[self.video.pk]))
+
+        self.assertEqual(response.context["form"].initial["tags"], "demo")
+        self.assertContains(response, 'value="old.mp4"')

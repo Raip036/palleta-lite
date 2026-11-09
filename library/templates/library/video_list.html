@@ -23,6 +23,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
           Download
         </a>
+        <a class="btn btn-dark btn-large" href="{% url 'edit' hero.pk %}" data-edit data-edit-url="{% url 'edit' hero.pk %}" data-title="{{ hero.title }}" data-tags="{% for t in hero.tags.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
+          Edit
+        </a>
         <button class="btn btn-dark btn-large" type="button" data-delete data-delete-url="{% url 'delete' hero.pk %}" data-title="{{ hero.title }}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
           Delete
@@ -70,6 +74,9 @@
             </button>
             <a class="icon-btn" href="{% url 'download' v.pk %}" aria-label="Download {{ v.title }}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+            </a>
+            <a class="icon-btn" href="{% url 'edit' v.pk %}" aria-label="Edit {{ v.title }}" data-edit data-edit-url="{% url 'edit' v.pk %}" data-title="{{ v.title }}" data-tags="{% for t in v.tags.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
             </a>
             <button class="icon-btn push" type="button" aria-label="Delete {{ v.title }}" data-delete data-delete-url="{% url 'delete' v.pk %}" data-title="{{ v.title }}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
@@ -127,6 +134,27 @@
     </button>
   </div>
   <video id="player-video" controls playsinline></video>
+</dialog>
+
+<dialog id="edit-dialog" aria-labelledby="edit-heading">
+  <form method="post" id="edit-form" class="dialog-body">
+    {% csrf_token %}
+    <input type="hidden" name="tag" value="{{ active_tag|default:'' }}">
+    <h2 id="edit-heading">Edit video</h2>
+    <div class="field">
+      <label for="edit-title">Title</label>
+      <input type="text" id="edit-title" name="title" maxlength="200" required autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="edit-tags">Tags <span class="muted">(optional)</span></label>
+      <input type="text" id="edit-tags" name="tags" autocomplete="off">
+      <p class="hint">Comma-separated, e.g. lecture, demo. Remove a tag by deleting it here.</p>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-dark" id="edit-cancel">Cancel</button>
+      <button type="submit" class="btn btn-light" id="edit-save" disabled><span id="edit-save-label">Save changes</span></button>
+    </div>
+  </form>
 </dialog>
 
 <dialog id="delete-dialog" aria-labelledby="delete-heading">
