@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>{% block title %}Paletta-Lite{% endblock %}</title>
+  <title>{% block title %}Pratik's Paletta{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'library/style.css' %}">
   <script src="{% static 'library/app.js' %}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="topbar" id="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="{% url 'video_list' %}">Paletta</a>
+      <a class="brand" href="{% url 'video_list' %}">Pratik's <span class="brand-sub">Paletta</span></a>
       <a class="btn btn-light btn-small" href="{% url 'upload' %}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         Upload

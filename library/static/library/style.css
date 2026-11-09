@@ -53,6 +53,7 @@ a { color: inherit; }
 .topbar.scrolled { background: var(--black); }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .brand { font-size: 1.5rem; font-weight: 800; letter-spacing: -.04em; text-decoration: none; }
+.brand-sub { font-weight: 300; letter-spacing: -.02em; }
 
 /* ---------- Layout ---------- */
 .container { padding-top: 6.5rem; padding-bottom: 5rem; }
