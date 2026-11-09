@@ -350,6 +350,21 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 }
 .form-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
 
+/* Upload page: form centred horizontally and vertically */
+.page-upload .container {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6rem;
+  padding-bottom: 3rem;
+}
+.page-upload .container > * { width: 100%; max-width: 640px; }
+.page-upload .page-head { text-align: center; }
+.page-upload .form-actions { justify-content: center; }
+
 /* ---------- Toasts ---------- */
 .toasts {
   position: fixed;
