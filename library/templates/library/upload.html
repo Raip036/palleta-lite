@@ -1,37 +1,76 @@
 {% extends "library/base.html" %}
-{% block title %}Upload · Paletta-Lite{% endblock %}
+{% block title %}Upload · Pratik's Paletta{% endblock %}
+{% block body_class %}page-upload{% endblock %}
 
 {% block content %}
-<a class="back" href="{% url 'video_list' %}">&larr; Back to library</a>
-<section class="page-head">
-  <h1>Upload videos</h1>
-  <p class="muted">Select as many files as you like. Tags apply to every file in this upload.</p>
-</section>
+{% if uploaded %}
+  <section class="success" aria-live="polite">
+    <svg class="check" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg>
+    <h1>{{ uploaded_count }} video{{ uploaded_count|pluralize }} uploaded</h1>
+    <p class="muted">Here's a preview of what you just added.</p>
 
-<form method="post" enctype="multipart/form-data" id="upload-form" class="upload">
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+    <ul class="previews">
+      {% for v in uploaded %}
+        <li class="preview" style="--i: {{ forloop.counter0 }}">
+          <div class="preview-thumb">
+            <video src="{{ v.file.url }}#t=0.5" muted playsinline preload="metadata" tabindex="-1"></video>
+          </div>
+          <span class="preview-name" title="{{ v.title }}">{{ v.title }}</span>
+          <span class="preview-tags">{% for t in v.tags.all %}#{{ t.name }} {% empty %}No tags{% endfor %}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if uploaded_extra %}<p class="muted">and {{ uploaded_extra }} more</p>{% endif %}
 
-  <div class="dropzone" id="dropzone">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-    <strong>Drag and drop videos here</strong>
-    <span>or <u>browse files</u></span>
-    {{ form.files }}
-  </div>
-  {% for error in form.files.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    <div class="form-actions">
+      <a class="btn btn-light btn-large" href="{% url 'video_list' %}">View library</a>
+      <a class="btn btn-dark btn-large" href="{% url 'upload' %}">Upload more</a>
+    </div>
+  </section>
+{% else %}
+  <a class="back" href="{% url 'video_list' %}">&larr; Back to library</a>
+  <section class="page-head">
+    <h1>Upload videos</h1>
+    <p class="muted">Select as many files as you like. Tags apply to every file in this upload.</p>
+  </section>
 
-  <ul class="file-list" id="file-list" aria-live="polite"></ul>
+  <form method="post" enctype="multipart/form-data" id="upload-form" class="upload">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
 
-  <div class="field">
-    <label for="{{ form.tags.id_for_label }}">Tags <span class="muted small">(optional)</span></label>
-    {{ form.tags }}
-    <p class="hint">{{ form.tags.help_text }}, e.g. lecture, demo</p>
-    {% for error in form.tags.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-  </div>
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <strong>Drag and drop videos here</strong>
+      <span class="muted">or click to browse files</span>
+      {{ form.files }}
+    </div>
+    {% for error in form.files.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
 
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Upload</button>
-    <a class="btn btn-secondary" href="{% url 'video_list' %}">Cancel</a>
-  </div>
-</form>
+    <ul class="file-list" id="file-list" aria-live="polite"></ul>
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress-top">
+        <span id="progress-label">Uploading…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track" id="progress-bar" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="muted" id="progress-detail"></p>
+    </div>
+    <p class="field-error" id="upload-error" role="alert" hidden></p>
+
+    <div class="field">
+      <label for="{{ form.tags.id_for_label }}">Tags <span class="muted">(optional)</span></label>
+      {{ form.tags }}
+      <p class="hint">{{ form.tags.help_text }}, e.g. lecture, demo</p>
+      {% for error in form.tags.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-light btn-large" id="submit-btn" disabled>Upload</button>
+      <a class="btn btn-dark btn-large" id="cancel-link" href="{% url 'video_list' %}">Cancel</a>
+    </div>
+  </form>
+{% endif %}
 {% endblock %}

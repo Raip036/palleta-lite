@@ -3,30 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Paletta-Lite{% endblock %}</title>
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}Pratik's Paletta{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'library/style.css' %}">
   <script src="{% static 'library/app.js' %}" defer></script>
 </head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="{% url 'video_list' %}">Paletta<span>Lite</span></a>
-      <a class="btn btn-primary" href="{% url 'upload' %}">
+<body class="{% block body_class %}{% endblock %}">
+  <header class="topbar" id="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="{% url 'video_list' %}">Pratik's <span class="brand-sub">Paletta</span></a>
+      <a class="btn btn-light btn-small" href="{% url 'upload' %}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        Upload videos
+        Upload
       </a>
     </div>
   </header>
 
-  <main class="container">
-    {% if messages %}
-      <div class="messages" role="status">
-        {% for message in messages %}
-          <div class="message {{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
+  {% block hero %}{% endblock %}
+
+  <main class="wrap container">
     {% block content %}{% endblock %}
   </main>
+
+  {% if messages %}
+    <div class="toasts" role="status">
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
 </body>
 </html>

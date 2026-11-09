@@ -1,13 +1,45 @@
 {% extends "library/base.html" %}
-{% block title %}Video library · Paletta-Lite{% endblock %}
+{% block title %}Library · Pratik's Paletta{% endblock %}
+{% block body_class %}{% if videos %}has-hero{% endif %}{% endblock %}
+
+{% block hero %}
+{% if videos %}
+  {% with hero=videos.0 %}
+  <section class="hero" aria-label="Featured video">
+    <video class="hero-video" src="{{ hero.file.url }}" autoplay muted loop playsinline tabindex="-1"></video>
+    <div class="hero-shade"></div>
+    <div class="wrap hero-content">
+      <p class="hero-kicker">{% if active_tag %}Latest tagged #{{ active_tag }}{% else %}Latest upload{% endif %}</p>
+      <h2 class="hero-title">{{ hero.title }}</h2>
+      <div class="tags">
+        {% for t in hero.tags.all %}<a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>{% endfor %}
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-light btn-large" type="button" data-play data-src="{{ hero.file.url }}" data-title="{{ hero.title }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+          Play
+        </button>
+        <a class="btn btn-dark btn-large" href="{% url 'download' hero.pk %}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+          Download
+        </a>
+        <a class="btn btn-dark btn-large" href="{% url 'edit' hero.pk %}" data-edit data-edit-url="{% url 'edit' hero.pk %}" data-title="{{ hero.title }}" data-tags="{% for t in hero.tags.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
+          Edit
+        </a>
+        <button class="btn btn-dark btn-large" type="button" data-delete data-delete-url="{% url 'delete' hero.pk %}" data-title="{{ hero.title }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endwith %}
+{% endif %}
+{% endblock %}
 
 {% block content %}
-<section class="page-head">
-  <h1>Video library</h1>
-  <p class="muted">
-    {{ videos|length }} video{{ videos|length|pluralize }}{% if active_tag %} tagged <strong>#{{ active_tag }}</strong>{% endif %}
-  </p>
-</section>
+<h1 class="sr-only">Video library</h1>
 
 {% if tags %}
   <nav class="chips" aria-label="Filter by tag">
@@ -19,43 +51,77 @@
 {% endif %}
 
 {% if videos %}
+  <div class="section-head">
+    <h2>{% if active_tag %}#{{ active_tag }}{% else %}All videos{% endif %}</h2>
+    <span class="muted">{{ videos|length }} video{{ videos|length|pluralize }}</span>
+    <button type="button" class="btn btn-dark btn-small" id="select-toggle" aria-pressed="false">Select</button>
+  </div>
+
   <div class="gallery">
     {% for v in videos %}
       <article class="card" style="--i: {{ forloop.counter0 }}">
-        <button class="thumb" type="button" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}" aria-label="Play {{ v.title }}">
+        <div class="thumb">
           <video src="{{ v.file.url }}#t=0.5" muted playsinline preload="metadata" tabindex="-1"></video>
-          <span class="play-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </span>
-        </button>
-        <div class="card-body">
+          <label class="select-mark">
+            <input type="checkbox" class="select-box" value="{{ v.pk }}" data-title="{{ v.title }}">
+            <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <span class="sr-only">Select {{ v.title }}</span>
+          </label>
+          <button class="thumb-hit" type="button" tabindex="-1" aria-hidden="true" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}"></button>
+          <div class="thumb-ui">
+            <button class="icon-btn solid" type="button" aria-label="Play {{ v.title }}" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <a class="icon-btn" href="{% url 'download' v.pk %}" aria-label="Download {{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+            </a>
+            <a class="icon-btn" href="{% url 'edit' v.pk %}" aria-label="Edit {{ v.title }}" data-edit data-edit-url="{% url 'edit' v.pk %}" data-title="{{ v.title }}" data-tags="{% for t in v.tags.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
+            </a>
+            <button class="icon-btn push" type="button" aria-label="Delete {{ v.title }}" data-delete data-delete-url="{% url 'delete' v.pk %}" data-title="{{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="meta">
           <h3 title="{{ v.title }}">{{ v.title }}</h3>
           <div class="tags">
-            {% for t in v.tags.all %}
-              <a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>
-            {% empty %}
-              <span class="muted small">No tags</span>
-            {% endfor %}
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-small btn-primary" type="button" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}">Play</button>
-            <a class="btn btn-small btn-secondary" href="{% url 'download' v.pk %}">Download</a>
+            {% for t in v.tags.all %}<a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>{% empty %}<span class="muted">No tags</span>{% endfor %}
           </div>
         </div>
       </article>
     {% endfor %}
   </div>
+
+  <form class="select-bar" id="select-bar" method="post" action="{% url 'download_selected' %}" aria-label="Selected videos">
+    {% csrf_token %}
+    <input type="hidden" name="tag" value="{{ active_tag|default:'' }}">
+    <div id="select-ids"></div>
+    <span class="select-count" id="select-count" aria-live="polite">0 selected</span>
+    <button type="button" class="btn btn-dark btn-small" id="select-all">Select all</button>
+    <div class="select-actions">
+      <button type="submit" class="btn btn-light btn-small" id="zip-btn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+        <span>Download ZIP</span>
+      </button>
+      <button type="button" class="btn btn-dark btn-small" id="bulk-delete" data-url="{% url 'delete_selected' %}" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+        Delete
+      </button>
+      <button type="button" class="btn btn-dark btn-small" id="select-done">Done</button>
+    </div>
+  </form>
 {% else %}
   <div class="empty">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/></svg>
     {% if active_tag %}
       <h2>No videos tagged #{{ active_tag }}</h2>
       <p class="muted">Try another tag or clear the filter.</p>
-      <a class="btn btn-secondary" href="{% url 'video_list' %}">Clear filter</a>
+      <a class="btn btn-light" href="{% url 'video_list' %}">Clear filter</a>
     {% else %}
       <h2>Your library is empty</h2>
       <p class="muted">Upload your first videos to get started.</p>
-      <a class="btn btn-primary" href="{% url 'upload' %}">Upload videos</a>
+      <a class="btn btn-light" href="{% url 'upload' %}">Upload videos</a>
     {% endif %}
   </div>
 {% endif %}
@@ -63,8 +129,49 @@
 <dialog id="player" aria-label="Video player">
   <div class="player-bar">
     <span id="player-title"></span>
-    <button class="btn btn-small btn-secondary" type="button" id="player-close">Close</button>
+    <button class="icon-btn" type="button" id="player-close" aria-label="Close player">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
   </div>
   <video id="player-video" controls playsinline></video>
+</dialog>
+
+<dialog id="edit-dialog" aria-labelledby="edit-heading">
+  <form method="post" id="edit-form" class="dialog-body">
+    {% csrf_token %}
+    <input type="hidden" name="tag" value="{{ active_tag|default:'' }}">
+    <h2 id="edit-heading">Edit video</h2>
+    <div class="field">
+      <label for="edit-title">Title</label>
+      <input type="text" id="edit-title" name="title" maxlength="200" required autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="edit-tags">Tags <span class="muted">(optional)</span></label>
+      <input type="text" id="edit-tags" name="tags" autocomplete="off">
+      <p class="hint">Comma-separated, e.g. lecture, demo. Remove a tag by deleting it here.</p>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-dark" id="edit-cancel">Cancel</button>
+      <button type="submit" class="btn btn-light" id="edit-save" disabled><span id="edit-save-label">Save changes</span></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="delete-dialog" aria-labelledby="delete-heading">
+  <form method="post" id="delete-form" class="dialog-body">
+    {% csrf_token %}
+    <input type="hidden" name="tag" value="{{ active_tag|default:'' }}">
+    <div id="delete-ids"></div>
+    <h2 id="delete-heading">Delete this video?</h2>
+    <p class="delete-name" id="delete-title"></p>
+    <p class="muted" id="delete-warning">This permanently removes the video and its file. You can't undo this.</p>
+    <div class="form-actions">
+      <button type="button" class="btn btn-dark" id="delete-cancel" autofocus>Cancel</button>
+      <button type="submit" class="btn btn-light" id="delete-confirm">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+        <span id="delete-confirm-label">Delete video</span>
+      </button>
+    </div>
+  </form>
 </dialog>
 {% endblock %}

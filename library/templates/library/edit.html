@@ -1,0 +1,30 @@
+{% extends "library/base.html" %}
+{% block title %}Edit · Pratik's Paletta{% endblock %}
+{% block body_class %}page-upload{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'video_list' %}">&larr; Back to library</a>
+<section class="page-head">
+  <h1>Edit video</h1>
+  <p class="muted">{{ video.title }}</p>
+</section>
+
+<form method="post" class="upload">
+  {% csrf_token %}
+  <div class="field">
+    <label for="{{ form.title.id_for_label }}">Title</label>
+    {{ form.title }}
+    {% for error in form.title.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+  <div class="field">
+    <label for="{{ form.tags.id_for_label }}">Tags <span class="muted">(optional)</span></label>
+    {{ form.tags }}
+    <p class="hint">{{ form.tags.help_text }}, e.g. lecture, demo</p>
+    {% for error in form.tags.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-light btn-large">Save changes</button>
+    <a class="btn btn-dark btn-large" href="{% url 'video_list' %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
