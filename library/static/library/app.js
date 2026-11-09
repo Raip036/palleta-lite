@@ -1,5 +1,25 @@
 (function () {
-  // ---------- Gallery: lightbox player + hover preview ----------
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- Top bar turns solid after scrolling ----------
+  var topbar = document.getElementById("topbar");
+  function onScroll() { topbar.classList.toggle("scrolled", window.scrollY > 20); }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // ---------- Toasts fade out on their own ----------
+  document.querySelectorAll(".message").forEach(function (m) {
+    setTimeout(function () {
+      m.classList.add("hide");
+      setTimeout(function () { m.remove(); }, 350);
+    }, 4000);
+  });
+
+  // ---------- Hero video ----------
+  var hero = document.querySelector(".hero-video");
+  if (hero && reduceMotion) hero.pause();
+
+  // ---------- Lightbox player ----------
   var dialog = document.getElementById("player");
   if (dialog) {
     var video = document.getElementById("player-video");
@@ -8,40 +28,44 @@
     function openPlayer(src, name) {
       title.textContent = name;
       video.src = src;
+      if (hero) hero.pause();
       dialog.showModal();
       video.play().catch(function () {});
     }
 
-    function stopPlayer() {
+    dialog.addEventListener("close", function () {   // also fires on Esc
       video.pause();
       video.removeAttribute("src");
       video.load();
-    }
+      if (hero && !reduceMotion) hero.play().catch(function () {});
+    });
 
     document.querySelectorAll("[data-play]").forEach(function (el) {
       el.addEventListener("click", function () {
         openPlayer(el.dataset.src, el.dataset.title);
       });
     });
+    document.getElementById("player-close").addEventListener("click", function () { dialog.close(); });
+    dialog.addEventListener("click", function (e) { if (e.target === dialog) dialog.close(); });
 
-    document.getElementById("player-close").addEventListener("click", function () {
-      dialog.close();
-    });
-    dialog.addEventListener("click", function (e) {
-      if (e.target === dialog) dialog.close();   // click on backdrop
-    });
-    dialog.addEventListener("close", stopPlayer);  // also fires on Esc
-
-    if (window.matchMedia("(hover: hover)").matches) {
+    // Hover preview, after a short delay so quick passes don't start playback
+    if (window.matchMedia("(hover: hover)").matches && !reduceMotion) {
       document.querySelectorAll(".thumb").forEach(function (thumb) {
         var v = thumb.querySelector("video");
-        thumb.addEventListener("mouseenter", function () { v.play().catch(function () {}); });
-        thumb.addEventListener("mouseleave", function () { v.pause(); v.currentTime = 0.5; });
+        var timer;
+        thumb.addEventListener("mouseenter", function () {
+          timer = setTimeout(function () { v.play().catch(function () {}); }, 350);
+        });
+        thumb.addEventListener("mouseleave", function () {
+          clearTimeout(timer);
+          v.pause();
+          v.currentTime = 0.5;
+        });
       });
     }
   }
 
-  // ---------- Upload page: file list + submit state ----------
+  // ---------- Upload page ----------
   var input = document.querySelector("#dropzone input[type=file]");
   if (input) {
     var zone = document.getElementById("dropzone");
@@ -61,7 +85,7 @@
         var name = document.createElement("span");
         name.textContent = f.name;
         var meta = document.createElement("span");
-        meta.className = "muted small";
+        meta.className = "muted";
         meta.textContent = size(f.size);
         li.appendChild(name);
         li.appendChild(meta);

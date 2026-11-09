@@ -1,13 +1,37 @@
 {% extends "library/base.html" %}
-{% block title %}Video library · Paletta-Lite{% endblock %}
+{% block title %}Library · Paletta-Lite{% endblock %}
+{% block body_class %}{% if videos %}has-hero{% endif %}{% endblock %}
+
+{% block hero %}
+{% if videos %}
+  {% with hero=videos.0 %}
+  <section class="hero" aria-label="Featured video">
+    <video class="hero-video" src="{{ hero.file.url }}" autoplay muted loop playsinline tabindex="-1"></video>
+    <div class="hero-shade"></div>
+    <div class="wrap hero-content">
+      <p class="hero-kicker">{% if active_tag %}Latest tagged #{{ active_tag }}{% else %}Latest upload{% endif %}</p>
+      <h2 class="hero-title">{{ hero.title }}</h2>
+      <div class="tags">
+        {% for t in hero.tags.all %}<a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>{% endfor %}
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-light btn-large" type="button" data-play data-src="{{ hero.file.url }}" data-title="{{ hero.title }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+          Play
+        </button>
+        <a class="btn btn-dark btn-large" href="{% url 'download' hero.pk %}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </section>
+  {% endwith %}
+{% endif %}
+{% endblock %}
 
 {% block content %}
-<section class="page-head">
-  <h1>Video library</h1>
-  <p class="muted">
-    {{ videos|length }} video{{ videos|length|pluralize }}{% if active_tag %} tagged <strong>#{{ active_tag }}</strong>{% endif %}
-  </p>
-</section>
+<h1 class="sr-only">Video library</h1>
 
 {% if tags %}
   <nav class="chips" aria-label="Filter by tag">
@@ -19,27 +43,30 @@
 {% endif %}
 
 {% if videos %}
+  <div class="section-head">
+    <h2>{% if active_tag %}#{{ active_tag }}{% else %}All videos{% endif %}</h2>
+    <span class="muted">{{ videos|length }} video{{ videos|length|pluralize }}</span>
+  </div>
+
   <div class="gallery">
     {% for v in videos %}
       <article class="card" style="--i: {{ forloop.counter0 }}">
-        <button class="thumb" type="button" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}" aria-label="Play {{ v.title }}">
+        <div class="thumb">
           <video src="{{ v.file.url }}#t=0.5" muted playsinline preload="metadata" tabindex="-1"></video>
-          <span class="play-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </span>
-        </button>
-        <div class="card-body">
+          <button class="thumb-hit" type="button" tabindex="-1" aria-hidden="true" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}"></button>
+          <div class="thumb-ui">
+            <button class="icon-btn solid" type="button" aria-label="Play {{ v.title }}" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <a class="icon-btn" href="{% url 'download' v.pk %}" aria-label="Download {{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="meta">
           <h3 title="{{ v.title }}">{{ v.title }}</h3>
           <div class="tags">
-            {% for t in v.tags.all %}
-              <a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>
-            {% empty %}
-              <span class="muted small">No tags</span>
-            {% endfor %}
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-small btn-primary" type="button" data-play data-src="{{ v.file.url }}" data-title="{{ v.title }}">Play</button>
-            <a class="btn btn-small btn-secondary" href="{% url 'download' v.pk %}">Download</a>
+            {% for t in v.tags.all %}<a href="?tag={{ t.name|urlencode }}">#{{ t.name }}</a>{% empty %}<span class="muted">No tags</span>{% endfor %}
           </div>
         </div>
       </article>
@@ -51,11 +78,11 @@
     {% if active_tag %}
       <h2>No videos tagged #{{ active_tag }}</h2>
       <p class="muted">Try another tag or clear the filter.</p>
-      <a class="btn btn-secondary" href="{% url 'video_list' %}">Clear filter</a>
+      <a class="btn btn-light" href="{% url 'video_list' %}">Clear filter</a>
     {% else %}
       <h2>Your library is empty</h2>
       <p class="muted">Upload your first videos to get started.</p>
-      <a class="btn btn-primary" href="{% url 'upload' %}">Upload videos</a>
+      <a class="btn btn-light" href="{% url 'upload' %}">Upload videos</a>
     {% endif %}
   </div>
 {% endif %}
@@ -63,7 +90,9 @@
 <dialog id="player" aria-label="Video player">
   <div class="player-bar">
     <span id="player-title"></span>
-    <button class="btn btn-small btn-secondary" type="button" id="player-close">Close</button>
+    <button class="icon-btn" type="button" id="player-close" aria-label="Close player">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
   </div>
   <video id="player-video" controls playsinline></video>
 </dialog>
