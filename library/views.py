@@ -2,7 +2,7 @@ import os
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -25,6 +25,10 @@ def video_list(request):
     })
 
 
+def is_ajax(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
 def upload(request):
     if request.method == "POST":
         form = UploadForm(request.POST, request.FILES)
@@ -42,7 +46,13 @@ def upload(request):
                 created.append(video.pk)
             # Post/Redirect/Get: remember what was uploaded for the success screen
             request.session["uploaded"] = created
+            if is_ajax(request):
+                # The browser's JS navigates here itself once the upload finishes
+                return JsonResponse({"redirect": reverse("upload")})
             return redirect("upload")
+        if is_ajax(request):
+            errors = {field: [str(e) for e in errs] for field, errs in form.errors.items()}
+            return JsonResponse({"errors": errors}, status=400)
     else:
         form = UploadForm()
 

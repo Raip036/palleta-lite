@@ -127,10 +127,125 @@
       zone.addEventListener(evt, function () { zone.classList.remove("over"); });
     });
 
-    form.addEventListener("submit", function () {
+    var progress = document.getElementById("progress");
+    var fill = document.getElementById("progress-fill");
+    var bar = document.getElementById("progress-bar");
+    var pctEl = document.getElementById("progress-pct");
+    var label = document.getElementById("progress-label");
+    var detail = document.getElementById("progress-detail");
+    var errorEl = document.getElementById("upload-error");
+    var cancelLink = document.getElementById("cancel-link");
+    var tagsInput = form.querySelector("input[type=text]");
+    var xhr = null;
+
+    function showError(text) {
+      errorEl.textContent = text;
+      errorEl.hidden = false;
+    }
+
+    function reset() {
+      xhr = null;
+      form.classList.remove("busy");
+      progress.hidden = true;
+      progress.classList.remove("processing");
+      input.disabled = false;
+      tagsInput.disabled = false;
+      btn.classList.remove("loading");
+      cancelLink.textContent = "Cancel";
+      Array.prototype.forEach.call(list.children, function (li) { li.classList.remove("done"); });
+      render();
+    }
+
+    function setProgress(pct) {
+      fill.style.transform = "scaleX(" + pct / 100 + ")";
+      pctEl.textContent = pct + "%";
+      bar.setAttribute("aria-valuenow", pct);
+    }
+
+    // Cancel aborts an upload in progress; otherwise it's a normal link back
+    cancelLink.addEventListener("click", function (e) {
+      if (xhr) { e.preventDefault(); xhr.abort(); }
+    });
+
+    window.addEventListener("beforeunload", function (e) {
+      if (xhr) { e.preventDefault(); e.returnValue = ""; }
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!input.files.length || xhr) return;
+
+      var data = new FormData(form);   // build before disabling inputs
+      var files = Array.prototype.slice.call(input.files);
+      var total = files.reduce(function (sum, f) { return sum + f.size; }, 0);
+      var ends = [], running = 0;
+      files.forEach(function (f) { running += f.size; ends.push(running); });
+
+      errorEl.hidden = true;
+      form.classList.add("busy");
+      input.disabled = true;
+      tagsInput.disabled = true;
       btn.disabled = true;
       btn.classList.add("loading");
       btn.textContent = "Uploading…";
+      cancelLink.textContent = "Cancel upload";
+      label.textContent = files.length > 1 ? "Uploading " + files.length + " videos" : "Uploading video";
+      setProgress(0);
+      detail.textContent = "0 MB of " + size(total);
+      progress.hidden = false;
+
+      xhr = new XMLHttpRequest();
+      xhr.open("POST", window.location.href);
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+      xhr.upload.addEventListener("progress", function (ev) {
+        if (!ev.lengthComputable) return;
+        setProgress(Math.min(100, Math.round(ev.loaded / ev.total * 100)));
+        var sent = Math.min(total, ev.loaded);
+        detail.textContent = size(sent) + " of " + size(total);
+        // Tick off files whose bytes have all been sent (multipart sends them in order)
+        ends.forEach(function (end, i) {
+          if (sent >= end && list.children[i]) list.children[i].classList.add("done");
+        });
+      });
+
+      xhr.upload.addEventListener("load", function () {
+        setProgress(100);
+        progress.classList.add("processing");
+        label.textContent = "Finishing up…";
+        detail.textContent = "Saving to your library";
+        Array.prototype.forEach.call(list.children, function (li) { li.classList.add("done"); });
+      });
+
+      xhr.addEventListener("load", function () {
+        var status = this.status;
+        var body = {};
+        try { body = JSON.parse(xhr.responseText); } catch (err) {}
+        if (xhr.status === 200 && body.redirect) {
+          xhr = null;   // allow navigation without the leave-page warning
+          window.location.href = body.redirect;
+          return;
+        }
+        reset();
+        if (body.errors) {
+          var first = Object.keys(body.errors)[0];
+          showError(body.errors[first][0]);
+        } else {
+          showError("Upload failed (error " + status + "). Try again.");
+        }
+      });
+
+      xhr.addEventListener("error", function () {
+        reset();
+        showError("Upload failed: check your connection and try again.");
+      });
+
+      xhr.addEventListener("abort", function () {
+        reset();
+        showError("Upload cancelled. Your files are still selected.");
+      });
+
+      xhr.send(data);
     });
   }
 })();

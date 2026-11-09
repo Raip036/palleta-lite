@@ -48,6 +48,18 @@
 
     <ul class="file-list" id="file-list" aria-live="polite"></ul>
 
+    <div class="progress" id="progress" hidden>
+      <div class="progress-top">
+        <span id="progress-label">Uploading…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track" id="progress-bar" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="muted" id="progress-detail"></p>
+    </div>
+    <p class="field-error" id="upload-error" role="alert" hidden></p>
+
     <div class="field">
       <label for="{{ form.tags.id_for_label }}">Tags <span class="muted">(optional)</span></label>
       {{ form.tags }}
@@ -57,7 +69,7 @@
 
     <div class="form-actions">
       <button type="submit" class="btn btn-light btn-large" id="submit-btn" disabled>Upload</button>
-      <a class="btn btn-dark btn-large" href="{% url 'video_list' %}">Cancel</a>
+      <a class="btn btn-dark btn-large" id="cancel-link" href="{% url 'video_list' %}">Cancel</a>
     </div>
   </form>
 {% endif %}

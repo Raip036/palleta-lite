@@ -394,6 +394,24 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 .preview-tags { color: var(--ink-3); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .success .form-actions { margin-top: .75rem; }
 
+/* Upload progress */
+.progress { display: grid; gap: .5rem; }
+.progress[hidden] { display: none; }
+.progress-top { display: flex; justify-content: space-between; font-weight: 700; }
+.progress-track { height: 6px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  background: var(--white);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s linear;
+}
+.progress.processing .progress-fill { animation: pulse 1.2s ease-in-out infinite; }
+.upload.busy .dropzone, .upload.busy .field { opacity: .45; pointer-events: none; }
+.file-list li { transition: background-color .3s; }
+.file-list li.done { background: var(--fill-2); }
+.file-list li.done span:last-child::before { content: "✓  "; color: var(--white); font-weight: 700; }
+
 /* ---------- Toasts ---------- */
 .toasts {
   position: fixed;
@@ -423,6 +441,7 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 @keyframes toast  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes spin   { to { transform: rotate(360deg); } }
 @keyframes draw   { to { stroke-dashoffset: 0; } }
+@keyframes pulse  { 50% { opacity: .45; } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

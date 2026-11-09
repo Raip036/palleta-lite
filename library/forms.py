@@ -13,6 +13,9 @@ class MultipleFileField(forms.FileField):
     def clean(self, data, initial=None):
         clean_one = super().clean
         if isinstance(data, (list, tuple)):
+            if not data:
+                # An empty list would skip validation, so run it once to enforce "required"
+                return [clean_one(None, initial)]
             return [clean_one(d, initial) for d in data]
         return [clean_one(data, initial)]
 

@@ -102,3 +102,22 @@ class UploadPreviewTests(TestCase):
         page = self.client.get(reverse("upload"))
         self.assertEqual(len(page.context["uploaded"]), 6)
         self.assertEqual(page.context["uploaded_extra"], 2)
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class AjaxUploadTests(TestCase):
+    AJAX = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
+
+    def test_ajax_upload_returns_redirect_json(self):
+        files = [SimpleUploadedFile("a.mp4", b"data", content_type="video/mp4")]
+        response = self.client.post(reverse("upload"), {"files": files}, **self.AJAX)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"redirect": reverse("upload")})
+        self.assertEqual(Video.objects.count(), 1)
+
+    def test_ajax_upload_without_files_returns_errors(self):
+        response = self.client.post(reverse("upload"), {"tags": "x"}, **self.AJAX)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("files", response.json()["errors"])
