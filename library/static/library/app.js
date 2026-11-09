@@ -65,6 +65,29 @@
     }
   }
 
+  // ---------- Delete confirmation ----------
+  var confirmDialog = document.getElementById("delete-dialog");
+  if (confirmDialog) {
+    var delForm = document.getElementById("delete-form");
+    var delName = document.getElementById("delete-title");
+    var delBtn = document.getElementById("delete-confirm");
+
+    document.querySelectorAll("[data-delete]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        delForm.action = el.dataset.deleteUrl;
+        delName.textContent = el.dataset.title;
+        confirmDialog.showModal();
+      });
+    });
+    document.getElementById("delete-cancel").addEventListener("click", function () { confirmDialog.close(); });
+    confirmDialog.addEventListener("click", function (e) { if (e.target === confirmDialog) confirmDialog.close(); });
+    delForm.addEventListener("submit", function () {
+      delBtn.disabled = true;
+      delBtn.classList.add("loading");
+      delBtn.textContent = "Deleting…";
+    });
+  }
+
   // ---------- Upload page ----------
   var input = document.querySelector("#dropzone input[type=file]");
   if (input) {

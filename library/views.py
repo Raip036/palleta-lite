@@ -1,8 +1,11 @@
 import os
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from .forms import UploadForm
 from .models import Tag, Video
@@ -51,3 +54,17 @@ def download(request, pk):
         as_attachment=True,
         filename=os.path.basename(video.file.name),
     )
+
+@require_POST
+def delete_video(request, pk):
+    video = get_object_or_404(Video, pk=pk)
+    title = video.title
+    video.file.delete(save=False)   # remove the file from storage, not just the DB row
+    video.delete()
+    messages.success(request, f'Deleted "{title}".')
+
+    # Stay on the current tag filter if it still has videos
+    tag = request.POST.get("tag")
+    if tag and Video.objects.filter(tags__name=tag).exists():
+        return redirect(f"{reverse('video_list')}?{urlencode({'tag': tag})}")
+    return redirect("video_list")

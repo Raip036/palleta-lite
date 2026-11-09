@@ -23,6 +23,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
           Download
         </a>
+        <button class="btn btn-dark btn-large" type="button" data-delete data-delete-url="{% url 'delete' hero.pk %}" data-title="{{ hero.title }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+          Delete
+        </button>
       </div>
     </div>
   </section>
@@ -61,6 +65,9 @@
             <a class="icon-btn" href="{% url 'download' v.pk %}" aria-label="Download {{ v.title }}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
             </a>
+            <button class="icon-btn push" type="button" aria-label="Delete {{ v.title }}" data-delete data-delete-url="{% url 'delete' v.pk %}" data-title="{{ v.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+            </button>
           </div>
         </div>
         <div class="meta">
@@ -95,5 +102,22 @@
     </button>
   </div>
   <video id="player-video" controls playsinline></video>
+</dialog>
+
+<dialog id="delete-dialog" aria-labelledby="delete-heading">
+  <form method="post" id="delete-form" class="dialog-body">
+    {% csrf_token %}
+    <input type="hidden" name="tag" value="{{ active_tag|default:'' }}">
+    <h2 id="delete-heading">Delete this video?</h2>
+    <p class="delete-name" id="delete-title"></p>
+    <p class="muted">This permanently removes the video and its file. You can't undo this.</p>
+    <div class="form-actions">
+      <button type="button" class="btn btn-dark" id="delete-cancel" autofocus>Cancel</button>
+      <button type="submit" class="btn btn-light" id="delete-confirm">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+        Delete video
+      </button>
+    </div>
+  </form>
 </dialog>
 {% endblock %}
