@@ -365,6 +365,35 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 .page-upload .page-head { text-align: center; }
 .page-upload .form-actions { justify-content: center; }
 
+/* Upload success: animated check + previews of what was just uploaded */
+.success { display: grid; justify-items: center; gap: .9rem; text-align: center; }
+.check { width: 68px; height: 68px; fill: none; stroke: var(--white); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.check circle { stroke-dasharray: 151; stroke-dashoffset: 151; animation: draw .6s var(--ease) forwards; }
+.check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .4s var(--ease) .45s forwards; }
+
+.previews {
+  list-style: none;
+  margin: .75rem 0 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 220px));
+  justify-content: center;
+  gap: 1.25rem .75rem;
+  text-align: left;
+}
+.preview {
+  display: grid;
+  gap: .25rem;
+  animation: fadein .5s var(--ease) both;
+  animation-delay: calc(.5s + var(--i) * 80ms);
+}
+.preview-thumb { aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #111; box-shadow: 0 0 0 1px var(--line); }
+.preview-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.preview-name { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-tags { color: var(--ink-3); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.success .form-actions { margin-top: .75rem; }
+
 /* ---------- Toasts ---------- */
 .toasts {
   position: fixed;
@@ -393,6 +422,7 @@ dialog#delete-dialog[open] { animation: pop .25s var(--ease); }
 @keyframes pop    { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes toast  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes spin   { to { transform: rotate(360deg); } }
+@keyframes draw   { to { stroke-dashoffset: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

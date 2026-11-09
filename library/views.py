@@ -10,6 +10,8 @@ from django.views.decorators.http import require_POST
 from .forms import UploadForm
 from .models import Tag, Video
 
+PREVIEW_LIMIT = 6
+
 
 def video_list(request):
     videos = Video.objects.prefetch_related("tags")
@@ -33,18 +35,28 @@ def upload(request):
                 if t.strip()
             ]
             tags = [Tag.objects.get_or_create(name=n)[0] for n in names]
-            files = form.cleaned_data["files"]
-            for f in files:
+            created = []
+            for f in form.cleaned_data["files"]:
                 video = Video.objects.create(title=f.name, file=f)
                 video.tags.set(tags)
-            messages.success(
-                request,
-                f"Uploaded {len(files)} video{'s' if len(files) != 1 else ''}.",
-            )
-            return redirect("video_list")
+                created.append(video.pk)
+            # Post/Redirect/Get: remember what was uploaded for the success screen
+            request.session["uploaded"] = created
+            return redirect("upload")
     else:
         form = UploadForm()
-    return render(request, "library/upload.html", {"form": form})
+
+    context = {"form": form}
+    ids = [] if request.method == "POST" else request.session.pop("uploaded", [])
+    if ids:
+        videos = list(Video.objects.filter(pk__in=ids).prefetch_related("tags"))
+        videos.sort(key=lambda v: ids.index(v.pk))   # keep the order they were uploaded in
+        context.update({
+            "uploaded": videos[:PREVIEW_LIMIT],
+            "uploaded_count": len(videos),
+            "uploaded_extra": max(0, len(videos) - PREVIEW_LIMIT),
+        })
+    return render(request, "library/upload.html", context)
 
 
 def download(request, pk):

@@ -51,3 +51,33 @@ class DeleteVideoTests(TestCase):
 
         self.assertEqual(response.status_code, 405)
         self.assertTrue(Video.objects.filter(pk=video.pk).exists())
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class UploadPreviewTests(TestCase):
+    def upload(self, count=2, tags="demo"):
+        files = [
+            SimpleUploadedFile(f"clip{i}.mp4", b"data", content_type="video/mp4")
+            for i in range(count)
+        ]
+        return self.client.post(reverse("upload"), {"files": files, "tags": tags})
+
+    def test_success_screen_shows_previews_once(self):
+        response = self.upload(count=2)
+        # fetch_redirect_response=False: fetching the target would consume the session flag
+        self.assertRedirects(response, reverse("upload"), fetch_redirect_response=False)
+
+        page = self.client.get(reverse("upload"))
+        self.assertEqual(page.context["uploaded_count"], 2)
+        self.assertEqual(len(page.context["uploaded"]), 2)
+        self.assertContains(page, "2 videos uploaded")
+
+        # Refreshing must not show the success screen again
+        again = self.client.get(reverse("upload"))
+        self.assertNotIn("uploaded", again.context)
+
+    def test_previews_are_capped(self):
+        self.upload(count=8)
+        page = self.client.get(reverse("upload"))
+        self.assertEqual(len(page.context["uploaded"]), 6)
+        self.assertEqual(page.context["uploaded_extra"], 2)
