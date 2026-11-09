@@ -235,6 +235,58 @@ a { color: inherit; }
 .meta { padding: .6rem .15rem 0; display: grid; gap: .15rem; }
 .meta h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* ---------- Select mode ---------- */
+.section-head #select-toggle { margin-left: auto; }
+
+.select-mark { position: absolute; top: .6rem; left: .6rem; z-index: 3; display: none; cursor: pointer; }
+.selecting .select-mark { display: block; }
+.select-box { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.mark {
+  display: grid;
+  place-items: center;
+  width: 28px; height: 28px;
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  transition: background-color .2s, transform .2s var(--ease);
+}
+.mark svg { width: 16px; height: 16px; fill: none; stroke: var(--black); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity .15s; }
+.select-box:checked ~ .mark { background: var(--white); transform: scale(1.08); }
+.select-box:checked ~ .mark svg { opacity: 1; }
+.select-box:focus-visible ~ .mark { outline: 3px solid var(--white); outline-offset: 3px; }
+
+.selecting .thumb-ui { display: none; }
+.selecting .card:hover, .selecting .card:focus-within { transform: none; }
+.selecting .card:hover .thumb { box-shadow: 0 0 0 1px rgba(255, 255, 255, .4); }
+.selecting .thumb video { transition: transform .3s var(--ease), opacity .3s; }
+.selecting.has-selection .card:not(.selected) .thumb video { opacity: .5; }
+.card.selected .thumb { box-shadow: 0 0 0 3px var(--white); }
+.card.selected .thumb video { transform: scale(.94); }
+
+.select-bar {
+  position: fixed;
+  left: 50%; bottom: 1.25rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  width: min(94vw, 720px);
+  padding: .75rem .9rem .75rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .8);
+  transform: translate(-50%, 160%);
+  visibility: hidden;
+  transition: transform .35s var(--ease), visibility 0s .35s;
+}
+.selecting .select-bar { transform: translate(-50%, 0); visibility: visible; transition: transform .35s var(--ease); }
+.select-count { font-weight: 700; min-width: 6.5rem; }
+.select-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-left: auto; }
+.selecting .container { padding-bottom: 9rem; }
+
 /* ---------- Empty state ---------- */
 .empty {
   display: grid;

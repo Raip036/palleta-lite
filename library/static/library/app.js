@@ -65,18 +65,42 @@
     }
   }
 
-  // ---------- Delete confirmation ----------
+  // ---------- Delete confirmation (single and bulk) ----------
+  var openDelete = null;
   var confirmDialog = document.getElementById("delete-dialog");
   if (confirmDialog) {
     var delForm = document.getElementById("delete-form");
+    var delHeading = document.getElementById("delete-heading");
     var delName = document.getElementById("delete-title");
+    var delWarning = document.getElementById("delete-warning");
+    var delLabel = document.getElementById("delete-confirm-label");
+    var delIds = document.getElementById("delete-ids");
     var delBtn = document.getElementById("delete-confirm");
+
+    openDelete = function (opts) {
+      delForm.action = opts.url;
+      delHeading.textContent = opts.heading;
+      delName.textContent = opts.names;
+      delWarning.textContent = opts.warning;
+      delLabel.textContent = opts.confirm;
+      delIds.innerHTML = "";
+      (opts.ids || []).forEach(function (id) {
+        var i = document.createElement("input");
+        i.type = "hidden"; i.name = "ids"; i.value = id;
+        delIds.appendChild(i);
+      });
+      confirmDialog.showModal();
+    };
 
     document.querySelectorAll("[data-delete]").forEach(function (el) {
       el.addEventListener("click", function () {
-        delForm.action = el.dataset.deleteUrl;
-        delName.textContent = el.dataset.title;
-        confirmDialog.showModal();
+        openDelete({
+          url: el.dataset.deleteUrl,
+          heading: "Delete this video?",
+          names: el.dataset.title,
+          warning: "This permanently removes the video and its file. You can't undo this.",
+          confirm: "Delete video"
+        });
       });
     });
     document.getElementById("delete-cancel").addEventListener("click", function () { confirmDialog.close(); });
@@ -84,7 +108,97 @@
     delForm.addEventListener("submit", function () {
       delBtn.disabled = true;
       delBtn.classList.add("loading");
-      delBtn.textContent = "Deleting…";
+      delLabel.textContent = "Deleting…";
+    });
+  }
+
+  // ---------- Select mode: multi-select, ZIP download, bulk delete ----------
+  var selectToggle = document.getElementById("select-toggle");
+  if (selectToggle) {
+    var selectBar = document.getElementById("select-bar");
+    var boxes = Array.prototype.slice.call(document.querySelectorAll(".select-box"));
+    var countEl = document.getElementById("select-count");
+    var zipBtn = document.getElementById("zip-btn");
+    var zipLabel = zipBtn.querySelector("span");
+    var bulkDelete = document.getElementById("bulk-delete");
+    var allBtn = document.getElementById("select-all");
+    var idsWrap = document.getElementById("select-ids");
+
+    function chosen() { return boxes.filter(function (b) { return b.checked; }); }
+    function selecting() { return document.body.classList.contains("selecting"); }
+
+    function update() {
+      var sel = chosen(), n = sel.length;
+      boxes.forEach(function (b) { b.closest(".card").classList.toggle("selected", b.checked); });
+      document.body.classList.toggle("has-selection", n > 0);
+      countEl.textContent = n + " selected";
+      zipBtn.disabled = bulkDelete.disabled = n === 0;
+      allBtn.textContent = n === boxes.length ? "Clear all" : "Select all";
+      idsWrap.innerHTML = "";
+      sel.forEach(function (b) {
+        var i = document.createElement("input");
+        i.type = "hidden"; i.name = "ids"; i.value = b.value;
+        idsWrap.appendChild(i);
+      });
+    }
+
+    function setMode(on) {
+      document.body.classList.toggle("selecting", on);
+      selectToggle.textContent = on ? "Cancel" : "Select";
+      selectToggle.setAttribute("aria-pressed", on);
+      if (!on) boxes.forEach(function (b) { b.checked = false; });
+      update();
+    }
+
+    selectToggle.addEventListener("click", function () { setMode(!selecting()); });
+    document.getElementById("select-done").addEventListener("click", function () { setMode(false); });
+    allBtn.addEventListener("click", function () {
+      var all = chosen().length !== boxes.length;
+      boxes.forEach(function (b) { b.checked = all; });
+      update();
+    });
+    boxes.forEach(function (b) { b.addEventListener("change", update); });
+
+    // In select mode, clicking a thumbnail selects it instead of playing it
+    document.querySelectorAll(".card [data-play]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        if (!selecting()) return;
+        e.stopImmediatePropagation();
+        var box = el.closest(".card").querySelector(".select-box");
+        box.checked = !box.checked;
+        update();
+      }, true);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && selecting() && !document.querySelector("dialog[open]")) setMode(false);
+    });
+
+    selectBar.addEventListener("submit", function () {
+      // The browser downloads the ZIP and stays on this page, so just show brief feedback
+      zipBtn.classList.add("loading");
+      zipLabel.textContent = "Preparing ZIP…";
+      setTimeout(function () {
+        zipBtn.classList.remove("loading");
+        zipLabel.textContent = "Download ZIP";
+      }, 3000);
+    });
+
+    bulkDelete.addEventListener("click", function () {
+      var sel = chosen(), n = sel.length;
+      if (!n || !openDelete) return;
+      var titles = sel.slice(0, 3).map(function (b) { return b.dataset.title; }).join(", ");
+      if (n > 3) titles += " and " + (n - 3) + " more";
+      openDelete({
+        url: bulkDelete.dataset.url,
+        heading: n === 1 ? "Delete 1 video?" : "Delete " + n + " videos?",
+        names: titles,
+        warning: n === 1
+          ? "This permanently removes the video and its file. You can't undo this."
+          : "This permanently removes these videos and their files. You can't undo this.",
+        confirm: n === 1 ? "Delete video" : "Delete " + n + " videos",
+        ids: sel.map(function (b) { return b.value; })
+      });
     });
   }
 

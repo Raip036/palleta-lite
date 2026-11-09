@@ -1,4 +1,7 @@
 import os
+import shutil
+import tempfile
+import zipfile
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -77,19 +80,75 @@ def download(request, pk):
         filename=os.path.basename(video.file.name),
     )
 
-@require_POST
-def delete_video(request, pk):
-    video = get_object_or_404(Video, pk=pk)
-    title = video.title
-    tag_ids = list(video.tags.values_list("pk", flat=True))
-    video.file.delete(save=False)   # remove the file from storage, not just the DB row
-    video.delete()
-    # Remove tags this video was the last user of, so empty tags don't linger
-    Tag.objects.filter(pk__in=tag_ids, video__isnull=True).delete()
-    messages.success(request, f'Deleted "{title}".')
+def selected_videos(request):
+    """Videos whose ids were posted as ?ids=1&ids=2 (non-numbers are ignored)."""
+    ids = [int(i) for i in request.POST.getlist("ids") if i.isdigit()]
+    return Video.objects.filter(pk__in=ids)
 
-    # Stay on the current tag filter if it still has videos
+
+def delete_videos(videos):
+    """Delete videos, their files, and any tags left with no videos. Returns the count."""
+    videos = list(videos)
+    tag_ids = set(Tag.objects.filter(video__in=videos).values_list("pk", flat=True))
+    for video in videos:
+        video.file.delete(save=False)   # remove the file from storage, not just the DB row
+        video.delete()
+    Tag.objects.filter(pk__in=tag_ids, video__isnull=True).delete()
+    return len(videos)
+
+
+def back_to_library(request):
+    """Stay on the current tag filter if it still has videos."""
     tag = request.POST.get("tag")
     if tag and Video.objects.filter(tags__name=tag).exists():
         return redirect(f"{reverse('video_list')}?{urlencode({'tag': tag})}")
     return redirect("video_list")
+
+
+def unique_name(name, used):
+    base, ext = os.path.splitext(name)
+    candidate, n = name, 2
+    while candidate in used:
+        candidate = f"{base} ({n}){ext}"
+        n += 1
+    used.add(candidate)
+    return candidate
+
+
+@require_POST
+def delete_video(request, pk):
+    video = get_object_or_404(Video, pk=pk)
+    title = video.title
+    delete_videos([video])
+    messages.success(request, f'Deleted "{title}".')
+    return back_to_library(request)
+
+
+@require_POST
+def delete_selected(request):
+    count = delete_videos(selected_videos(request))
+    if count:
+        messages.success(request, f"Deleted {count} video{'s' if count != 1 else ''}.")
+    else:
+        messages.error(request, "No videos were selected.")
+    return back_to_library(request)
+
+
+@require_POST
+def download_selected(request):
+    videos = list(selected_videos(request))
+    if not videos:
+        messages.error(request, "Select at least one video to download.")
+        return back_to_library(request)
+
+    # Build the ZIP in a temp file (not memory) and stream it back.
+    # ZIP_STORED: video is already compressed, so deflating would only burn CPU.
+    archive = tempfile.TemporaryFile()
+    used = set()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_STORED) as zf:
+        for video in videos:
+            name = unique_name(os.path.basename(video.title) or "video", used)
+            with video.file.open("rb") as src, zf.open(name, "w", force_zip64=True) as dst:
+                shutil.copyfileobj(src, dst, 1024 * 1024)
+    archive.seek(0)
+    return FileResponse(archive, as_attachment=True, filename="paletta-videos.zip")

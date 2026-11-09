@@ -121,3 +121,59 @@ class AjaxUploadTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("files", response.json()["errors"])
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class SelectedVideoTests(TestCase):
+    def make(self, title, data=b"data"):
+        return Video.objects.create(title=title, file=SimpleUploadedFile(title, data))
+
+    def test_download_selected_returns_zip_of_chosen_videos(self):
+        import io, zipfile
+        a = self.make("a.mp4", b"AAA")
+        b = self.make("b.mp4", b"BBB")
+        self.make("c.mp4")   # not selected
+
+        response = self.client.post(reverse("download_selected"), {"ids": [a.pk, b.pk]})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("paletta-videos.zip", response["Content-Disposition"])
+        archive = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+        self.assertEqual(sorted(archive.namelist()), ["a.mp4", "b.mp4"])
+        self.assertEqual(archive.read("a.mp4"), b"AAA")
+
+    def test_zip_renames_duplicate_titles(self):
+        import io, zipfile
+        a = self.make("clip.mp4")
+        b = self.make("clip.mp4")
+
+        response = self.client.post(reverse("download_selected"), {"ids": [a.pk, b.pk]})
+
+        archive = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+        self.assertEqual(sorted(archive.namelist()), ["clip (2).mp4", "clip.mp4"])
+
+    def test_download_selected_with_nothing_selected_redirects(self):
+        response = self.client.post(reverse("download_selected"), {})
+        self.assertRedirects(response, reverse("video_list"))
+
+    def test_delete_selected_removes_only_chosen_videos_and_orphan_tags(self):
+        lone = Tag.objects.create(name="lone")
+        shared = Tag.objects.create(name="shared")
+        a = self.make("a.mp4")
+        b = self.make("b.mp4")
+        keep = self.make("keep.mp4")
+        a.tags.set([lone, shared])
+        b.tags.set([lone])
+        keep.tags.set([shared])
+        paths = [a.file.path, b.file.path]
+
+        self.client.post(reverse("delete_selected"), {"ids": [a.pk, b.pk]})
+
+        self.assertEqual(list(Video.objects.all()), [keep])
+        self.assertFalse(any(os.path.exists(p) for p in paths))
+        self.assertFalse(Tag.objects.filter(name="lone").exists())
+        self.assertTrue(Tag.objects.filter(name="shared").exists())
+
+    def test_bulk_endpoints_require_post(self):
+        self.assertEqual(self.client.get(reverse("download_selected")).status_code, 405)
+        self.assertEqual(self.client.get(reverse("delete_selected")).status_code, 405)
