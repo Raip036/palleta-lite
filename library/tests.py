@@ -44,6 +44,27 @@ class DeleteVideoTests(TestCase):
         self.assertFalse(Video.objects.filter(pk=video.pk).exists())
         self.assertFalse(os.path.exists(path))
 
+    def test_delete_removes_tags_left_with_no_videos(self):
+        video = self.make_video()
+        video.tags.set([Tag.objects.create(name="solo")])
+
+        self.client.post(reverse("delete", args=[video.pk]))
+
+        self.assertFalse(Tag.objects.filter(name="solo").exists())
+
+    def test_delete_keeps_tags_still_used_by_other_videos(self):
+        shared = Tag.objects.create(name="shared")
+        first = self.make_video()
+        second = Video.objects.create(
+            title="b.mp4", file=SimpleUploadedFile("b.mp4", b"data")
+        )
+        first.tags.set([shared])
+        second.tags.set([shared])
+
+        self.client.post(reverse("delete", args=[first.pk]))
+
+        self.assertTrue(Tag.objects.filter(name="shared").exists())
+
     def test_delete_requires_post(self):
         video = self.make_video()
 

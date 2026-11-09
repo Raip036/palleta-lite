@@ -71,8 +71,11 @@ def download(request, pk):
 def delete_video(request, pk):
     video = get_object_or_404(Video, pk=pk)
     title = video.title
+    tag_ids = list(video.tags.values_list("pk", flat=True))
     video.file.delete(save=False)   # remove the file from storage, not just the DB row
     video.delete()
+    # Remove tags this video was the last user of, so empty tags don't linger
+    Tag.objects.filter(pk__in=tag_ids, video__isnull=True).delete()
     messages.success(request, f'Deleted "{title}".')
 
     # Stay on the current tag filter if it still has videos
