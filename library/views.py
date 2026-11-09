@@ -1,5 +1,6 @@
 import os
 
+from django.contrib import messages
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -29,9 +30,14 @@ def upload(request):
                 if t.strip()
             ]
             tags = [Tag.objects.get_or_create(name=n)[0] for n in names]
-            for f in form.cleaned_data["files"]:
+            files = form.cleaned_data["files"]
+            for f in files:
                 video = Video.objects.create(title=f.name, file=f)
                 video.tags.set(tags)
+            messages.success(
+                request,
+                f"Uploaded {len(files)} video{'s' if len(files) != 1 else ''}.",
+            )
             return redirect("video_list")
     else:
         form = UploadForm()

@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Paletta-Lite{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'library/style.css' %}">
+  <script src="{% static 'library/app.js' %}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'video_list' %}">Paletta<span>Lite</span></a>
+      <a class="btn btn-primary" href="{% url 'upload' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Upload videos
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="messages" role="status">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

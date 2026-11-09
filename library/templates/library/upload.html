@@ -1,7 +1,37 @@
-<h1>Upload videos</h1>
-<form method="post" enctype="multipart/form-data">
+{% extends "library/base.html" %}
+{% block title %}Upload · Paletta-Lite{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'video_list' %}">&larr; Back to library</a>
+<section class="page-head">
+  <h1>Upload videos</h1>
+  <p class="muted">Select as many files as you like. Tags apply to every file in this upload.</p>
+</section>
+
+<form method="post" enctype="multipart/form-data" id="upload-form" class="upload">
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Upload</button>
+  {{ form.non_field_errors }}
+
+  <div class="dropzone" id="dropzone">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+    <strong>Drag and drop videos here</strong>
+    <span>or <u>browse files</u></span>
+    {{ form.files }}
+  </div>
+  {% for error in form.files.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+
+  <ul class="file-list" id="file-list" aria-live="polite"></ul>
+
+  <div class="field">
+    <label for="{{ form.tags.id_for_label }}">Tags <span class="muted small">(optional)</span></label>
+    {{ form.tags }}
+    <p class="hint">{{ form.tags.help_text }}, e.g. lecture, demo</p>
+    {% for error in form.tags.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Upload</button>
+    <a class="btn btn-secondary" href="{% url 'video_list' %}">Cancel</a>
+  </div>
 </form>
-<a href="{% url 'video_list' %}">Back</a>
+{% endblock %}
